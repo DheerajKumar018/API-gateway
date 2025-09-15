@@ -1,0 +1,141 @@
+{
+  "info": {
+    "name": "OWASP Shield API - Full OWASP + Regex Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Submit Safe Request",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"Hello World\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+
+   
+    {
+      "name": "SQL Injection Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"' OR 1=1 --\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "XSS Attack Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"<script>alert('xss')</script>\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "Remote Code Execution Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"os.system('ls')\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "Broken Access Control Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"Access admin panel\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+
+    
+    {
+      "name": "Email Leak Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"My email is test@example.com\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "IP Leak Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"Internal server at 10.0.0.5\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "Path Traversal Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"../../etc/passwd\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "Credit Card Leak Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"4111111111111111\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "SSN Leak Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"SSN: 123-45-6789\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+    {
+      "name": "API Key Leak Test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"data\": \"API_KEY=AIzaSyA-FAKEKEY-123456\" }" },
+        "url": { "raw": "http://127.0.0.1:8000/submit", "protocol": "http", "host": ["127.0.0.1"], "port": "8000", "path": ["submit"] }
+      }
+    },
+
+
+    {
+      "name": "List Incidents",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://127.0.0.1:8000/admin/incidents?key=supersecretadminkey",
+          "protocol": "http",
+          "host": ["127.0.0.1"],
+          "port": "8000",
+          "path": ["admin", "incidents"],
+          "query": [{ "key": "key", "value": "supersecretadminkey" }]
+        }
+      }
+    },
+    {
+      "name": "Mark Incident 0 Handled",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://127.0.0.1:8000/admin/incidents/0/handle?key=supersecretadminkey",
+          "protocol": "http",
+          "host": ["127.0.0.1"],
+          "port": "8000",
+          "path": ["admin", "incidents", "0", "handle"],
+          "query": [{ "key": "key", "value": "supersecretadminkey" }]
+        }
+      }
+    }
+  ]
+}
