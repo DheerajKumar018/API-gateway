@@ -1,83 +1,138 @@
+# main.py
+import asyncio
+from typing import Dict
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import httpx
+import logging
 
 from owasp_rules import OWASP_RULES
-from regex_rules import check_regex_rules
+from regex_rules import check_regex_rules, detect_email
 from incident_logger import log_incident, get_incidents, mark_incident_handled
 
 app = FastAPI()
+logging.basicConfig(level=logging.INFO)
 
-# -------------------- CONFIG --------------------
+# Admin key (demo)
 ADMIN_KEY = "supersecretadminkey"
-BACKEND_URL = "http://127.0.0.1:9000"  # backend.py will run here
 
+# Route map - map path prefixes to backend base URLs
+# Add /auth, /users, /orders etc.
+ROUTE_MAP = {
+    "/auth": "http://127.0.0.1:9100",
+    "/users": "http://127.0.0.1:9200",
+    "/orders": "http://127.0.0.1:9300",
+}
+DEFAULT_BACKEND = "http://127.0.0.1:9000"  # fallback backend
 
-# -------------------- HELPER --------------------
+# httpx client timeout
+CLIENT_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+
 def admin_auth(key: str):
     if key != ADMIN_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
 
+def resolve_backend(path: str) -> str:
+    # match longest prefix first
+    prefixes = sorted(ROUTE_MAP.keys(), key=len, reverse=True)
+    for p in prefixes:
+        if path.startswith(p):
+            return ROUTE_MAP[p]
+    return DEFAULT_BACKEND
 
-# -------------------- MIDDLEWARE --------------------
 @app.middleware("http")
-async def payload_inspection(request: Request, call_next):
-    body = await request.body()
-    payload = body.decode("utf-8")
-    query_params = str(request.query_params)
-    full_payload = payload + query_params
+async def payload_inspection_middleware(request: Request, call_next):
+    # Read body (bytes)
+    try:
+        body_bytes = await request.body()
+    except Exception:
+        body_bytes = b""
 
-    client_ip = request.client.host
+    try:
+        payload_text = body_bytes.decode("utf-8", errors="ignore")
+    except Exception:
+        payload_text = ""
 
-    # Step 1: OWASP Rules
-    for rule_name, rule_func in OWASP_RULES.items():
-        if rule_func(full_payload):
-            log_incident(client_ip, full_payload, rule_name)
-            return JSONResponse(
-                status_code=403,
-                content={"detail": f"Blocked by OWASP rule: {rule_name}"}
-            )
+    qs = request.url.query or ""
+    full_payload = payload_text + ("?" + qs if qs else "")
 
-    # Step 2: Regex Rules
-    triggered_regex = check_regex_rules(full_payload)
-    if triggered_regex:
-        for r in triggered_regex:
+    client_ip = request.client.host if request.client else "unknown"
+
+    # OWASP rules
+    for rule_name, rule_fn in OWASP_RULES.items():
+        try:
+            if rule_fn(full_payload):
+                log_incident(client_ip, full_payload, rule_name)
+                return JSONResponse(status_code=403, content={"detail": f"Blocked by OWASP rule: {rule_name}"})
+        except Exception:
+            # don't break pipeline for faulty rule
+            logging.exception("Error evaluating OWASP rule %s", rule_name)
+
+    # Regex rules
+    try:
+        triggered = check_regex_rules(full_payload)
+    except Exception:
+        triggered = []
+    if triggered:
+        for r in triggered:
             log_incident(client_ip, full_payload, r)
-        return JSONResponse(
-            status_code=403,
-            content={"detail": f"Blocked by Regex rule(s): {', '.join(triggered_regex)}"}
-        )
+        return JSONResponse(status_code=403, content={"detail": f"Blocked by Regex rule(s): {', '.join(triggered)}"})
 
-    # Step 3: Forward to backend service if safe
-    async with httpx.AsyncClient() as client:
-        # Forward request to backend with original method & body
-        response = await client.request(
-            method=request.method,
-            url=f"{BACKEND_URL}{request.url.path}",  # keep same path
-            headers=request.headers,
-            content=body
-        )
+    # If safe -> forward to appropriate backend
+    backend_base = resolve_backend(request.url.path)
+    # Build target URL: backend_base + original path + query
+    target = backend_base.rstrip("/") + request.url.path
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
 
-    return JSONResponse(status_code=response.status_code, content=response.json())
+    headers = dict(request.headers)
+    # Remove host header to avoid backend confusion (backend may expect its host)
+    headers.pop("host", None)
 
+    async with httpx.AsyncClient(timeout=CLIENT_TIMEOUT) as client:
+        try:
+            resp = await client.request(
+                method=request.method,
+                url=target,
+                headers=headers,
+                content=body_bytes,
+                params=None  # query already attached to target
+            )
+        except httpx.RequestError as exc:
+            logging.exception("Upstream request failed: %s", exc)
+            return JSONResponse(status_code=502, content={"detail": "Bad Gateway: upstream unreachable"})
 
-# -------------------- ADMIN ENDPOINTS --------------------
+    # Return upstream response (preserve status and body)
+    # Try JSON response; otherwise return raw bytes
+    content_type = resp.headers.get("content-type", "application/json")
+    try:
+        # If upstream sends JSON, return JSONResponse to preserve formatted body
+        if "application/json" in content_type:
+            return JSONResponse(status_code=resp.status_code, content=resp.json())
+        else:
+            return Response(content=resp.content, status_code=resp.status_code, media_type=content_type)
+    except Exception:
+        return Response(content=resp.content, status_code=resp.status_code, media_type=content_type)
+
+# Admin endpoints
 @app.get("/admin/incidents")
-def list_incidents(key: str):
+def admin_list_incidents(key: str):
     admin_auth(key)
     return get_incidents()
 
-
 @app.post("/admin/incidents/{incident_id}/handle")
-def handle_incident(incident_id: int, key: str):
+def admin_handle_incident(incident_id: int, key: str):
     admin_auth(key)
     if mark_incident_handled(incident_id):
         return {"message": f"Incident {incident_id} marked as handled"}
     raise HTTPException(status_code=404, detail="Incident not found")
 
+# Optional health endpoint
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting Payload Inspection Gateway...")
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
