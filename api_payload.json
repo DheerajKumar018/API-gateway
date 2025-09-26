@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "API Gateway - Safe & Malicious Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Safe and malicious requests for testing Nginx + FastAPI gateway + Suricata integration"
+  },
+  "item": [
+    {
+      "name": "Safe - Submit /submit (POST)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"data\": \"Hello, this is a safe request\" }"},
+        "url": {"raw":"http://localhost/submit","protocol":"http","host":["localhost"],"path":["submit"]}
+      }
+    },
+    {
+      "name": "Safe - Login /auth/login (POST)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"username\": \"alice\", \"password\": \"s3cur3P@ss\" }"},
+        "url": {"raw":"http://localhost/auth/login","protocol":"http","host":["localhost"],"path":["auth","login"]}
+      }
+    },
+    {
+      "name": "SQLi - classic OR injection (POST /submit)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"data\": \"' OR 1=1 --\" }"},
+        "url": {"raw":"http://localhost/submit","protocol":"http","host":["localhost"],"path":["submit"]}
+      }
+    },
+    {
+      "name": "SQLi - UNION SELECT (POST /search)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"q\": \"1 UNION SELECT username, password FROM users\" }"},
+        "url": {"raw":"http://localhost/search","protocol":"http","host":["localhost"],"path":["search"]}
+      }
+    },
+    {
+      "name": "XSS - script tag (POST /comments)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"comment\": \"<script>alert(1)</script>\" }"},
+        "url": {"raw":"http://localhost/comments","protocol":"http","host":["localhost"],"path":["comments"]}
+      }
+    },
+    {
+      "name": "XSS - onerror img (POST /comments)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"comment\": \"<img src=x onerror=alert(1)>\" }"},
+        "url": {"raw":"http://localhost/comments","protocol":"http","host":["localhost"],"path":["comments"]}
+      }
+    },
+    {
+      "name": "CMDi - semicolon chain (POST /admin/exec)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"cmd\": \"id; ls -la\" }"},
+        "url": {"raw":"http://localhost/admin/exec","protocol":"http","host":["localhost"],"path":["admin","exec"]}
+      }
+    },
+    {
+      "name": "CMDi - subshell $() (POST /admin/exec)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"cmd\": \"output=$(whoami)\" }"},
+        "url": {"raw":"http://localhost/admin/exec","protocol":"http","host":["localhost"],"path":["admin","exec"]}
+      }
+    },
+    {
+      "name": "SSRF - metadata IP (POST /fetch)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"url\": \"http://169.254.169.254/latest/meta-data/\" }"},
+        "url": {"raw":"http://localhost/fetch","protocol":"http","host":["localhost"],"path":["fetch"]}
+      }
+    },
+    {
+      "name": "Path Traversal - Linux (POST /download)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"file\": \"../../etc/passwd\" }"},
+        "url": {"raw":"http://localhost/download","protocol":"http","host":["localhost"],"path":["download"]}
+      }
+    },
+    {
+      "name": "Path Traversal - Windows style (POST /download)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"file\": \"..\\\\..\\\\windows\\\\system32\\\\config\\\\sam\" }"},
+        "url": {"raw":"http://localhost/download","protocol":"http","host":["localhost"],"path":["download"]}
+      }
+    },
+    {
+      "name": "Email Leak (POST /submit)",
+      "request": {
+        "method": "POST",
+        "header": [{"key":"Content-Type","value":"application/json"}],
+        "body": {"mode":"raw","raw":"{ \"data\": \"Contact: test@example.com\" }"},
+        "url": {"raw":"http://localhost/submit","protocol":"http","host":["localhost"],"path":["submit"]}
+      }
+    },
+    {
+      "name": "Safe - GET health /health",
+      "request": {
+        "method": "GET",
+        "url": {"raw":"http://localhost/health","protocol":"http","host":["localhost"],"path":["health"]}
+      }
+    },
+    {
+      "name": "Admin - List incidents (GET)",
+      "request": {
+        "method": "GET",
+        "url": {"raw":"http://127.0.0.1:8000/admin/incidents?key=supersecretadminkey","protocol":"http","host":["127.0.0.1"],"port":"8000","path":["admin","incidents"],"query":[{"key":"key","value":"supersecretadminkey"}]}
+      }
+    },
+    {
+      "name": "Admin - Mark incident 0 handled (POST)",
+      "request": {
+        "method": "POST",
+        "url": {"raw":"http://127.0.0.1:8000/admin/incidents/0/handle?key=supersecretadminkey","protocol":"http","host":["127.0.0.1"],"port":"8000","path":["admin","incidents","0","handle"],"query":[{"key":"key","value":"supersecretadminkey"}]}
+      }
+    }
+  ]
+}
