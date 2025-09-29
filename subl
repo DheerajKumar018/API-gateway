@@ -1,0 +1,104 @@
+%YAML 1.1
+---
+
+# Suricata configuration
+# Minimal example tuned for HTTP inspection + logging
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.0.0/16]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+  port-groups:
+    HTTP_PORTS: "80"
+    HTTPS_PORTS: "443"
+
+af-packet:
+  - interface: eth0
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+
+logging:
+  default-log-level: info
+  outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+
+  # JSON log for integrations (Postman, API Gateway, etc.)
+  - eve-log:
+      enabled: yes
+      filetype: regular # "regular" = write to file, "syslog" = send to syslog
+      filename: eve.json
+      pcap-file: false
+      community-id: true
+      community-id-seed: 0
+      types:
+        - alert:            # alert events
+            metadata: yes
+            tagged-packets: yes
+        - http:             # log HTTP req/resp
+            extended: yes   # include headers, body len, etc.
+        - dns:              # DNS queries/responses
+            query: yes
+            answer: yes
+        - tls:              # TLS handshakes
+            extended: yes
+        - ssh               # SSH connections
+        - stats:            # runtime stats
+            totals: yes
+            threads: no
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      types:
+        - alert
+        - dns
+        - http
+        - tls
+        - stats
+
+stats:
+  enabled: yes
+  interval: 30  # seconds
+
+app-layer:
+  protocols:
+    http:
+      enabled: yes
+      libhtp:
+        default-config:
+          personality: IDS
+          request-body-limit: 100kb
+          response-body-limit: 100kb
+    tls:
+      enabled: yes
+    dns:
+      enabled: yes
+    ftp:
+      enabled: no
+    smtp:
+      enabled: no
+
+detect:
+  profile: medium
+  prefilter: yes
+  sgh-mpm-context: auto
+  inspection-recursion-limit: 3000
+  no-double-detect: yes
+
+default-log-dir: /var/log/suricata
+
+rule-files:
+  - local.rules
+
+classification-file: /etc/suricata/classification.config
+reference-config-file: /etc/suricata/reference.config
+
+---
