@@ -16,11 +16,7 @@ def log_incident(ip: str, payload: str, rule: str):
         "rule_triggered": rule,
         "status": "open"
     })
-<<<<<<< HEAD
-    print(f"🚨 Incident logged: {rule} from {ip}")
-=======
     print(f" Incident logged: {rule} from {ip}")
->>>>>>> api-gateway_2.0
 
 # -------------------- Get all incidents --------------------
 def get_incidents():

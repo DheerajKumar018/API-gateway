@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-# OWASP Top 10 simplified demo rules
-
-def sql_injection(payload: str) -> bool:
-    patterns = ["' OR 1=1", "--", "DROP TABLE"]
-    return any(p.lower() in payload.lower() for p in patterns)
-
-def xss_attack(payload: str) -> bool:
-    patterns = ["<script>", "javascript:"]
-=======
 # owasp_rules.py
 # Extended OWASP Top 10 detection rules (based on your payload dataset)
 
@@ -57,14 +47,10 @@ def security_misconfig(payload: str) -> bool:
 
 def vulnerable_components(payload: str) -> bool:
     patterns = ["jquery 1.8", "struts2", "log4j 2.14", "openssl 1.0"]
->>>>>>> api-gateway_2.0
     return any(p.lower() in payload.lower() for p in patterns)
 
 OWASP_RULES = {
     "SQL Injection": sql_injection,
-<<<<<<< HEAD
-    "XSS": xss_attack
-=======
     "XSS": xss_attack,
     "RCE": rce_attack,
     "Path Traversal": path_traversal,
@@ -76,5 +62,4 @@ OWASP_RULES = {
     "Sensitive Data Exposure": sensitive_data_exposure,
     "Security Misconfiguration": security_misconfig,
     "Vulnerable Components": vulnerable_components,
->>>>>>> api-gateway_2.0
 }

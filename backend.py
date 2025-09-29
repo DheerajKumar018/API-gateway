@@ -1,25 +1,11 @@
-<<<<<<< HEAD
-from fastapi import FastAPI
-=======
 # backend_multi.py
 from fastapi import FastAPI, Request
 import uvicorn
 import sys
->>>>>>> api-gateway_2.0
 
 app = FastAPI()
 
 @app.post("/submit")
-<<<<<<< HEAD
-async def submit_data(data: dict):
-    return {"message": "✅ Request reached backend service", "data": data}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    print("🚀 Starting Backend Service...")
-    uvicorn.run("backend:app", host="127.0.0.1", port=9000, reload=True)
-=======
 async def submit(data: dict):
     return {"service": "default", "message": "Request reached backend /submit", "data": data}
 
@@ -48,4 +34,3 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
     uvicorn.run("backend:app", host="127.0.0.1", port=port, reload=True)
->>>>>>> api-gateway_2.0
