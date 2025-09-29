@@ -16,7 +16,7 @@ def log_incident(ip: str, payload: str, rule: str):
         "rule_triggered": rule,
         "status": "open"
     })
-    print(f"🚨 Incident logged: {rule} from {ip}")
+    print(f" Incident logged: {rule} from {ip}")
 
 # -------------------- Get all incidents --------------------
 def get_incidents():
