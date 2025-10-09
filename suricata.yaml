@@ -1,0 +1,40 @@
+%YAML 1.1
+---
+
+# Suricata minimal config for macOS (Homebrew)
+vars:
+  address-groups:
+    HOME_NET: "[192.168.0.0/16,10.0.0.0/8,127.0.0.1]"
+    EXTERNAL_NET: "any"
+    HTTP_SERVERS: "[127.0.0.1]"
+  port-groups:
+    HTTP_PORTS: "80,8080,8000,443"
+    SHELLCODE_PORTS: "any"
+    SSH_PORTS: "22"
+    SSL_PORTS: "443, 8443"
+    DNS_PORTS: "53"
+    SMTP_PORTS: "25, 465, 587"
+    SQL_PORTS: "1433, 3306, 5432"
+    RDP_PORTS: "3389"
+    TELNET_PORTS: "23"
+af-packet:
+  - interface: en0
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /opt/homebrew/var/log/suricata/eve.json
+      types:
+        - alert:
+            payload: yes
+            payload-printable: yes
+            packet: yes
+
+default-rule-path: /opt/homebrew/etc/suricata/rules
+rule-files:
+  - suricata.rules
+
+logging:
+  default-log-level: info
+
